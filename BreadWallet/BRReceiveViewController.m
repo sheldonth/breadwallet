@@ -29,6 +29,7 @@
 #import "BRWalletManager.h"
 #import "BRWallet.h"
 #import "BRBubbleView.h"
+#import "BRMultiPeerManager.h"
 
 #define QR_TIP      NSLocalizedString(@"Let others scan this QR code to get your bitcoin address. Anyone can send "\
                     "bitcoins to your wallet by transferring them to your address.", nil)
@@ -38,13 +39,16 @@
 @interface BRReceiveViewController ()
 
 @property (nonatomic, strong) BRBubbleView *tipView;
-@property (nonatomic, assign) BOOL showTips;
+@property (nonatomic, assign) BOOL showTips, isMulti;
 @property (nonatomic, strong) id protectedObserver;
 
 @property (nonatomic, strong) IBOutlet UILabel *label;
 @property (nonatomic, strong) IBOutlet UIButton *addressButton;
 @property (nonatomic, strong) IBOutlet UIImageView *qrView;
-
+@property (nonatomic, strong) IBOutlet UILabel *peerLabel;
+#ifdef MULTIPEER
+@property (nonatomic, strong) id transactionObserver;
+#endif
 @end
 
 @implementation BRReceiveViewController
@@ -58,6 +62,21 @@
         queue:nil usingBlock:^(NSNotification *note) {
             [self updateAddress];
         }];
+    
+    self.peerLabel.alpha = 0;
+#ifdef MULTIPEER
+    self.transactionObserver =
+        [[NSNotificationCenter defaultCenter]addObserverForName:BRWalletBalanceChangedNotification object:nil queue:nil usingBlock:^(NSNotification *note) {
+            [self endMultiPeer];
+        }];
+#endif
+    self.addressButton.titleLabel.adjustsFontSizeToFitWidth = YES;
+    [self updateAddress];
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
 
     [self.addressButton setTitle:nil forState:UIControlStateNormal];
     self.addressButton.titleLabel.adjustsFontSizeToFitWidth = YES;
@@ -66,14 +85,23 @@
 
 - (void)viewWillDisappear:(BOOL)animated
 {
-    [self hideTips];
-    
     [super viewWillDisappear:animated];
 }
 
 - (void)dealloc
 {
     if (self.protectedObserver) [[NSNotificationCenter defaultCenter] removeObserver:self.protectedObserver];
+#ifdef MULTIPEER
+    if (self.transactionObserver) [[NSNotificationCenter defaultCenter]removeObserver:self.transactionObserver];
+#endif
+}
+- (void)viewDidDisappear:(BOOL)animated
+{
+    [super viewDidDisappear:animated];
+#ifdef MULTIPEER
+    [self endMultiPeer];
+#endif
+
 }
 
 - (void)updateAddress
@@ -145,6 +173,35 @@
     if (self.tipView.alpha > 0.5) [self.tipView popOut];
 }
 
+#ifdef MULTIPEER
+- (void)beginMultiPeer
+{
+    if (self.isMulti) return;
+    [[[BRMultiPeerManager sharedInstance]newPeerName]startAdvertisingWithCompletion:^{
+        [self.peerLabel setText:[[[BRMultiPeerManager sharedInstance]peerID]displayName]];
+        [UIView animateWithDuration:0.3 animations:^{
+            [self.qrView setAlpha:0];
+            [self.qrView.superview setAlpha:0];
+            [self.peerLabel setAlpha:1];
+        }];
+        self.isMulti = YES;
+    }];
+}
+
+- (void)endMultiPeer
+{
+    if (!self.isMulti) return;
+    [[BRMultiPeerManager sharedInstance]stopAdvertisingWithCompletion:^{
+        [UIView animateWithDuration:0.3 animations:^{
+            [self.qrView setAlpha:1];
+            [self.qrView.superview setAlpha:1];
+            [self.peerLabel setAlpha:0];
+        }];
+        self.isMulti = NO;
+    }];
+}
+#endif
+
 #pragma mark - IBAction
 
 - (IBAction)tip:(id)sender
@@ -180,11 +237,24 @@
 #if ! TARGET_IPHONE_SIMULATOR
     if ([MFMessageComposeViewController canSendText]) [a addButtonWithTitle:NSLocalizedString(@"send as message", nil)];
 #endif
+#ifdef MULTIPEER
+    if (self.isMulti)
+        [a addButtonWithTitle:NSLocalizedString(@"cancel nearby", nil)];
+    else
+        [a addButtonWithTitle:NSLocalizedString(@"send to nearby devices", nil)];
+#endif
     [a addButtonWithTitle:NSLocalizedString(@"cancel", nil)];
     a.cancelButtonIndex = a.numberOfButtons - 1;
-    
     [a showInView:[[UIApplication sharedApplication] keyWindow]];
 }
+
+- (void)peerLabelTap:(id)sender
+{
+#ifdef MULTIPEER
+    [self endMultiPeer];
+#endif
+}
+
 
 #pragma mark - UIActionSheetDelegate
 
@@ -234,7 +304,17 @@
             [[[UIAlertView alloc] initWithTitle:nil message:NSLocalizedString(@"sms not currently available", nil)
               delegate:nil cancelButtonTitle:NSLocalizedString(@"ok", nil) otherButtonTitles:nil] show];
         }
-    }    
+    }
+#ifdef MULTIPEER
+    else if ([title isEqual:NSLocalizedString(@"cancel nearby", nil)])
+    {
+        [self endMultiPeer];
+    }
+    else if ([title isEqual:NSLocalizedString(@"send to nearby devices", nil)])
+    {
+        [self beginMultiPeer];
+    }
+#endif
 }
 
 #pragma mark - MFMessageComposeViewControllerDelegate

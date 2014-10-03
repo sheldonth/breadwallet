@@ -1076,6 +1076,15 @@
                                     <outletCollection property="gestureRecognizers" destination="oUQ-zV-oxL" appends="YES" id="4re-TV-YSv"/>
                                 </connections>
                             </button>
+                            <label opaque="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="888888" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" useAutomaticPreferredMaxLayoutWidth="YES" translatesAutoresizingMaskIntoConstraints="NO" id="P30-vp-ewe">
+                                <rect key="frame" x="34" y="188" width="252" height="158"/>
+                                <fontDescription key="fontDescription" name="HelveticaNeue-Light" family="Helvetica Neue" pointSize="62"/>
+                                <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                <nil key="highlightedColor"/>
+                                <connections>
+                                    <outletCollection property="gestureRecognizers" destination="Ogu-EO-vMb" appends="YES" id="BkL-Xa-la4"/>
+                                </connections>
+                            </label>
                         </subviews>
                         <gestureRecognizers/>
                         <constraints>
@@ -1094,6 +1103,7 @@
                     <extendedEdge key="edgesForExtendedLayout" bottom="YES"/>
                     <connections>
                         <outlet property="addressButton" destination="XV7-2s-hZs" id="jn1-4G-QVT"/>
+                        <outlet property="peerLabel" destination="P30-vp-ewe" id="6w3-9H-0tp"/>
                         <outlet property="qrView" destination="PTm-4L-adQ" id="Ti4-bc-a9W"/>
                     </connections>
                 </viewController>
@@ -1112,6 +1122,11 @@
                 <tapGestureRecognizer id="wBJ-0U-BOy">
                     <connections>
                         <action selector="tip:" destination="XLw-gP-lYw" id="mfR-zP-xd3"/>
+                    </connections>
+                </tapGestureRecognizer>
+                <tapGestureRecognizer id="Ogu-EO-vMb">
+                    <connections>
+                        <action selector="peerLabelTap:" destination="XLw-gP-lYw" id="JyA-ah-z7Y"/>
                     </connections>
                 </tapGestureRecognizer>
             </objects>
@@ -1168,6 +1183,32 @@
                                     <action selector="scanQR:" destination="RsQ-W7-grB" eventType="touchUpInside" id="wbh-n6-WR8"/>
                                 </connections>
                             </button>
+                            <button opaque="NO" contentMode="scaleToFill" ambiguous="YES" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" adjustsImageWhenHighlighted="NO" adjustsImageWhenDisabled="NO" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Zgn-mo-aUf">
+                                <rect key="frame" x="45" y="400" width="230" height="44"/>
+                                <gestureRecognizers/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="44" id="06q-6w-h3J"/>
+                                    <constraint firstAttribute="width" constant="230" id="tyQ-G6-MGQ"/>
+                                </constraints>
+                                <fontDescription key="fontDescription" name="HelveticaNeue-Light" family="Helvetica Neue" pointSize="17"/>
+                                <inset key="imageEdgeInsets" minX="-10" minY="0.0" maxX="10" maxY="0.0"/>
+                                <size key="titleShadowOffset" width="0.0" height="1"/>
+                                <state key="normal" title="pay to: " backgroundImage="button-bg-blue">
+                                    <color key="titleColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="calibratedRGB"/>
+                                    <color key="titleShadowColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                </state>
+                                <state key="disabled" image="cameraguide-small" backgroundImage="button-bg-blue-pressed">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                    <color key="titleShadowColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                </state>
+                                <state key="highlighted" image="cameraguide-small" backgroundImage="button-bg-blue-pressed">
+                                    <color key="titleColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                    <color key="titleShadowColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                                </state>
+                                <connections>
+                                    <action selector="payToPin:" destination="RsQ-W7-grB" eventType="touchUpInside" id="WIc-pk-iaO"/>
+                                </connections>
+                            </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" adjustsImageWhenHighlighted="NO" adjustsImageWhenDisabled="NO" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="bfj-xS-5rN">
                                 <rect key="frame" x="45" y="334" width="230" height="44"/>
                                 <gestureRecognizers/>
@@ -1221,6 +1262,7 @@
                     <connections>
                         <outlet property="clipboardButton" destination="bfj-xS-5rN" id="mfH-NX-2iX"/>
                         <outlet property="clipboardText" destination="SgP-DR-cyl" id="pL2-sH-61L"/>
+                        <outlet property="multiPeerPayButton" destination="Zgn-mo-aUf" id="a7I-b8-ss1"/>
                         <outlet property="scanButton" destination="ce6-Wi-wk4" id="tr9-fj-NRa"/>
                         <outlet property="sendLabel" destination="l5l-JR-LKA" id="uWh-qp-akV"/>
                     </connections>

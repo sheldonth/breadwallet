@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		47EAECE619D8A1F400AC0771 /* BRMultiPeerManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 47EAECE519D8A1F400AC0771 /* BRMultiPeerManager.m */; };
 		7525B619192453840041C0F2 /* BRNavigationBar.m in Sources */ = {isa = PBXBuildFile; fileRef = 7525B618192453840041C0F2 /* BRNavigationBar.m */; };
 		752E289A192349CE00DB5A3C /* BreadWallet.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 752E2898192349CE00DB5A3C /* BreadWallet.xcdatamodeld */; };
 		752E28AA19234AE300DB5A3C /* BRAddressEntity.m in Sources */ = {isa = PBXBuildFile; fileRef = 752E289F19234AE300DB5A3C /* BRAddressEntity.m */; };
@@ -697,6 +698,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		47EAECE419D8A1F400AC0771 /* BRMultiPeerManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BRMultiPeerManager.h; sourceTree = "<group>"; };
+		47EAECE519D8A1F400AC0771 /* BRMultiPeerManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BRMultiPeerManager.m; sourceTree = "<group>"; };
 		7525B617192453840041C0F2 /* BRNavigationBar.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BRNavigationBar.h; sourceTree = "<group>"; };
 		7525B618192453840041C0F2 /* BRNavigationBar.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = BRNavigationBar.m; sourceTree = "<group>"; };
 		752E2899192349CE00DB5A3C /* BreadWallet.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = BreadWallet.xcdatamodel; sourceTree = "<group>"; };
@@ -1678,6 +1681,8 @@
 				752E28BF19234C3600DB5A3C /* BRPaymentProtocol.m */,
 				752E28C019234C3600DB5A3C /* BRPaymentRequest.h */,
 				752E28C119234C3600DB5A3C /* BRPaymentRequest.m */,
+				47EAECE419D8A1F400AC0771 /* BRMultiPeerManager.h */,
+				47EAECE519D8A1F400AC0771 /* BRMultiPeerManager.m */,
 			);
 			name = Models;
 			sourceTree = "<group>";
@@ -3150,7 +3155,7 @@
 				ORGANIZATIONNAME = "Aaron Voisine";
 				TargetAttributes = {
 					75D5F3BD191EC270004AB296 = {
-						DevelopmentTeam = 4R7S6N88W9;
+						DevelopmentTeam = 72D53DS677;
 						SystemCapabilities = {
 							com.apple.BackgroundModes = {
 								enabled = 1;
@@ -3161,6 +3166,7 @@
 						};
 					};
 					75D5F3E4191EC270004AB296 = {
+						DevelopmentTeam = 72D53DS677;
 						TestTargetID = 75D5F3BD191EC270004AB296;
 					};
 				};
@@ -3859,6 +3865,7 @@
 				752E28D019234C3600DB5A3C /* BRBloomFilter.m in Sources */,
 				752E28D619234C3600DB5A3C /* BRPeer.m in Sources */,
 				752E28D819234C3600DB5A3C /* BRPeerManager.m in Sources */,
+				47EAECE619D8A1F400AC0771 /* BRMultiPeerManager.m in Sources */,
 				752E28D419234C3600DB5A3C /* BRPaymentProtocol.m in Sources */,
 				752E28D519234C3600DB5A3C /* BRPaymentRequest.m in Sources */,
 				7525B619192453840041C0F2 /* BRNavigationBar.m in Sources */,

@@ -39,6 +39,7 @@
 #import "NSString+Base58.h"
 #import "NSMutableData+Bitcoin.h"
 #import "NSData+Hash.h"
+#import "BRMultiPeerManager.h"
 
 #define SCAN_TIP      NSLocalizedString(@"Scan someone else's QR code to get their bitcoin address. "\
                                          "You can send a payment to anyone with an address.", nil)
@@ -56,7 +57,7 @@ static NSString *sanitizeString(NSString *s)
     return sane;
 }
 
-@interface BRSendViewController ()
+@interface BRSendViewController () <UIActionSheetDelegate>
 
 @property (nonatomic, assign) BOOL clearClipboard, useClipboard, showTips, didAskFee, removeFee;
 @property (nonatomic, strong) BRTransaction *tx, *sweepTx;
@@ -66,10 +67,10 @@ static NSString *sanitizeString(NSString *s)
 @property (nonatomic, strong) NSString *okAddress;
 @property (nonatomic, strong) BRBubbleView *tipView;
 @property (nonatomic, strong) BRScanViewController *scanController;
-@property (nonatomic, strong) id clipboardObserver;
+@property (nonatomic, strong) id clipboardObserver, peerCountObserver;
 
 @property (nonatomic, strong) IBOutlet UILabel *sendLabel;
-@property (nonatomic, strong) IBOutlet UIButton *scanButton, *clipboardButton;
+@property (nonatomic, strong) IBOutlet UIButton *scanButton, *clipboardButton, *multiPeerPayButton;
 @property (nonatomic, strong) IBOutlet UITextView *clipboardText;
 
 @end
@@ -91,6 +92,13 @@ static NSString *sanitizeString(NSString *s)
             }
             else [self updateClipboardText];
         }];
+    [self.multiPeerPayButton setAlpha:0];
+#ifdef MULTIPEER
+    self.peerCountObserver =
+        [[NSNotificationCenter defaultCenter]addObserverForName:BRMultiPeerManagerNewPeerCountNofication object:nil queue:nil usingBlock:^(NSNotification *note) {
+            [self updateMultiPeerState];
+        }];
+#endif
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -98,6 +106,9 @@ static NSString *sanitizeString(NSString *s)
     [super viewWillAppear:animated];
 
     [self cancel:nil];
+#ifdef MULTIPEER
+    [[BRMultiPeerManager sharedInstance]startBrowsingWithCompletion:nil];
+#endif
 }
 
 - (void)viewDidAppear:(BOOL)animated
@@ -117,6 +128,9 @@ static NSString *sanitizeString(NSString *s)
 - (void)dealloc
 {
     if (self.clipboardObserver) [[NSNotificationCenter defaultCenter] removeObserver:self.clipboardObserver];
+#ifdef MULTIPEER
+    if (self.peerCountObserver) [[NSNotificationCenter defaultCenter] removeObserver:self.peerCountObserver];
+#endif
 }
 
 - (void)handleURL:(NSURL *)url
@@ -570,6 +584,48 @@ memo:(NSString *)memo isSecure:(BOOL)isSecure
     [self.clipboardText scrollRangeToVisible:NSMakeRange(0, 0)];
 }
 
+#ifdef MULTIPEER
+- (void)updateMultiPeerState
+{
+    NSMutableOrderedSet* peers = [[BRMultiPeerManager sharedInstance]peers];
+    [self.multiPeerPayButton setTag:peers.count - 1];
+    switch (peers.count) {
+        case 0:
+        {
+            [UIView animateWithDuration:.3 animations:^{
+                [self.multiPeerPayButton setAlpha:0];
+            }completion:^(BOOL finished) {
+                [self.clipboardText setUserInteractionEnabled:YES];
+            }];
+            break;
+        }
+            
+        case 1:
+        {
+            [self.multiPeerPayButton setTitle:[NSString stringWithFormat:NSLocalizedString(@"pay device #%@", nil), [[[[BRMultiPeerManager sharedInstance]peers]objectAtIndex:0]objectForKey:DISPLAY_NAME_KEY]] forState:UIControlStateNormal];
+            [UIView animateWithDuration:.3 animations:^{
+                [self.multiPeerPayButton setAlpha:1];
+            }completion:^(BOOL finished) {
+                [self.clipboardText setUserInteractionEnabled:NO];
+            }];
+            break;
+        }
+            
+        default:
+        {
+            [self.multiPeerPayButton setTitle:NSLocalizedString(@"pay nearby device", nil) forState:UIControlStateNormal];
+            if (self.multiPeerPayButton.alpha != 1.f)
+                [UIView animateWithDuration:.3 animations:^{
+                    [self.multiPeerPayButton setAlpha:1];
+                }completion:^(BOOL finished) {
+                    [self.clipboardText setUserInteractionEnabled:NO];
+                }];
+            break;
+        }
+    }
+}
+#endif
+
 #pragma mark - IBAction
 
 - (IBAction)tip:(id)sender
@@ -653,6 +709,29 @@ memo:(NSString *)memo isSecure:(BOOL)isSecure
     self.didAskFee = self.removeFee = NO;
     self.scanButton.enabled = self.clipboardButton.enabled = YES;
     [self updateClipboardText];
+}
+
+- (IBAction)payToPin:(UIButton*)sender
+{
+#ifdef MULTIPEER
+    if (sender.tag > MAXIMUM_PEERS) return;
+    NSMutableOrderedSet* p = [[BRMultiPeerManager sharedInstance]peers];
+    if (sender.tag)
+    {
+        UIActionSheet *a = [UIActionSheet new];
+        
+        a.title = [NSString stringWithFormat:NSLocalizedString(@"Choose Peer PIN:", nil)];
+        a.delegate = self;
+        for (NSInteger i = 0; i <= sender.tag; i++)
+            [a addButtonWithTitle:[[p objectAtIndex:i]objectForKey:DISPLAY_NAME_KEY]];
+        [a addButtonWithTitle:NSLocalizedString(@"cancel", nil)];
+        a.cancelButtonIndex = a.numberOfButtons - 1;
+        
+        [a showInView:[[UIApplication sharedApplication] keyWindow]];
+    }
+    else
+        [self confirmRequest:[BRPaymentRequest requestWithString:[[p objectAtIndex:sender.tag]objectForKey:ADDRESS_KEY]]];
+#endif
 }
 
 #pragma mark - BRAmountViewControllerDelegate
@@ -864,6 +943,7 @@ fromConnection:(AVCaptureConnection *)connection
             [(id)self.parentViewController.parentViewController stopActivityWithSuccess:(! error)];
 
             if (error && [m.wallet transactionForHash:self.tx.txHash] == nil) {
+
                 [[[UIAlertView alloc] initWithTitle:nil message:error.localizedDescription delegate:nil
                   cancelButtonTitle:NSLocalizedString(@"ok", nil) otherButtonTitles:nil] show];
                 [self cancel:nil];
@@ -1015,5 +1095,19 @@ presentingController:(UIViewController *)presenting sourceController:(UIViewCont
 {
     return self;
 }
+
+#pragma mark - UIActionSheetDelegate
+
+#ifdef MULTIPEER
+-(void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+    if (buttonIndex != actionSheet.cancelButtonIndex)
+    {
+        NSMutableOrderedSet* p = [[BRMultiPeerManager sharedInstance]peers];
+        [self confirmRequest:[BRPaymentRequest requestWithString:[[p objectAtIndex:buttonIndex]objectForKey:ADDRESS_KEY]]];
+    }
+}
+#endif
+
 
 @end

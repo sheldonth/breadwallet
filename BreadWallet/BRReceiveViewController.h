@@ -30,6 +30,7 @@
 MFMessageComposeViewControllerDelegate, MFMailComposeViewControllerDelegate>
 
 - (IBAction)tip:(id)sender;
+- (IBAction)peerLabelTap:(id)sender;
 
 - (void)updateAddress;
 

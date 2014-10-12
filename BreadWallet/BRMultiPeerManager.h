@@ -30,8 +30,8 @@
 
 #define BROWSES YES
 #define DEFAULT_PEER_NAME @"Peer"
-#define SERVICE_TYPE @"bwmulti" // Must be 1–15 characters long Can contain only ASCII lowercase letters, numbers, and hyphens. (Per docs)
-#define SERVICES_KEY @"bwmultiservices"
+#define SERVICE_TYPE @"bitcoin" // Must be 1–15 characters long Can contain only ASCII lowercase letters, numbers, and hyphens. (Per docs)
+#define SERVICES_KEY @"bitcoinservices"
 #define PEER_COUNT_KEY @"peercount"
 #define ADDRESS_KEY @"addr"
 #define DISPLAY_NAME_KEY @"displayname"

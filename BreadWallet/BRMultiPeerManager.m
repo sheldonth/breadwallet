@@ -34,6 +34,7 @@
 #define NOISY_MULTIPEERMANAGER NO
 
 typedef enum : uint16_t {
+    BRMultiPeerServiceTypeBitcoinNone = (0 << 0), // 00000000 => Offer no services
     BRMultiPeerServiceTypeBitcoinAddressAdvertiser = (1 << 0), // 00000001 => Only advertises recieving addresses, never joins a session
     BRMultiPeerServiceTypeBitcoinPaymentProtocol = (1 << 1), // 00000010 => For accepting, fufilling, and acknowledging bitcoin payment protocol objects. TODO
     BRMultiPeerServiceTypeBitcoinNetworkRelay = (1 << 2) // 00000100 => For relaying traffic to the bitcoin network if the other device has connectivity and this does not. TODO
@@ -67,26 +68,30 @@ typedef enum : uint16_t {
 }
 
 // Received a byte stream from remote peer
-- (void)session:(MCSession *)session didReceiveStream:(NSInputStream *)stream withName:(NSString *)streamName fromPeer:(MCPeerID *)peerID
+- (void)session:(MCSession *)session didReceiveStream:(NSInputStream *)stream
+       withName:(NSString *)streamName fromPeer:(MCPeerID *)peerID
 {
     // required delegate method but unused
 }
 
 // Start receiving a resource from remote peer
-- (void)session:(MCSession *)session didStartReceivingResourceWithName:(NSString *)resourceName fromPeer:(MCPeerID *)peerID withProgress:(NSProgress *)progress
+- (void)session:(MCSession *)session didStartReceivingResourceWithName:(NSString *)resourceName
+       fromPeer:(MCPeerID *)peerID withProgress:(NSProgress *)progress
 {
     // required delegate method but unused
 }
 
 
 // Finished receiving a resource from remote peer and saved the content in a temporary location - the app is responsible for moving the file to a permanent location within its sandbox
-- (void)session:(MCSession *)session didFinishReceivingResourceWithName:(NSString *)resourceName fromPeer:(MCPeerID *)peerID atURL:(NSURL *)localURL withError:(NSError *)error
+- (void)session:(MCSession *)session didFinishReceivingResourceWithName:(NSString *)resourceName
+       fromPeer:(MCPeerID *)peerID atURL:(NSURL *)localURL withError:(NSError *)error
 {
     if (NOISY_MULTIPEERMANAGER) NSLog(@"didFinishReceivingResourceWithName");
 }
 
 // Made first contact with peer and have identity information about the remote peer (certificate may be nil)
-- (void)session:(MCSession *)session didReceiveCertificate:(NSArray *)certificate fromPeer:(MCPeerID *)peerID certificateHandler:(void(^)(BOOL accept))certificateHandler
+- (void)session:(MCSession *)session didReceiveCertificate:(NSArray *)certificate
+       fromPeer:(MCPeerID *)peerID certificateHandler:(void(^)(BOOL accept))certificateHandler
 {
     if (NOISY_MULTIPEERMANAGER) NSLog(@"didReceiveCertificate");
 }
@@ -119,7 +124,8 @@ typedef enum : uint16_t {
     
     // sanity check 1
     NSIndexSet* s = [self.peers indexesOfObjectsPassingTest:^BOOL(NSDictionary* obj, NSUInteger idx, BOOL *stop) {
-        if ([[obj objectForKey:ADDRESS_KEY]isEqualToString:[info objectForKey:ADDRESS_KEY]] && [[obj objectForKey:DISPLAY_NAME_KEY]isEqualToString:peerID.displayName])
+        if ([[obj objectForKey:ADDRESS_KEY]isEqualToString:[info objectForKey:ADDRESS_KEY]] \
+            && [[obj objectForKey:DISPLAY_NAME_KEY]isEqualToString:peerID.displayName])
             return YES;
         else
             return NO;
@@ -128,11 +134,14 @@ typedef enum : uint16_t {
     
     // sanity check 2
     if ([[[BRWalletManager sharedInstance] wallet] receiveAddress])
-        if ([self.peerID.displayName isEqualToString:peerID.displayName] && [[[[BRWalletManager sharedInstance] wallet] receiveAddress] isEqualToString:[info objectForKey:ADDRESS_KEY]])
+        if ([self.peerID.displayName isEqualToString:peerID.displayName] \
+            && [[[[BRWalletManager sharedInstance] wallet] receiveAddress] isEqualToString:[info objectForKey:ADDRESS_KEY]])
             return;
     
     // sanity check 3
-    if ([[peerID displayName]intValue] == 0 || [[peerID displayName]intValue] == INT_MAX || [[peerID displayName]intValue] == INT_MIN)
+    if ([[peerID displayName]intValue] == 0 || \
+        [[peerID displayName]intValue] == INT_MAX || \
+        [[peerID displayName]intValue] == INT_MIN)
         return;
     
     // sanity check 4
@@ -145,7 +154,9 @@ typedef enum : uint16_t {
     if (s1.count)
     {
         [self.peers removeObjectsAtIndexes:s1];
-        [[NSNotificationCenter defaultCenter]postNotificationName:BRMultiPeerManagerNewPeerCountNofication object:nil userInfo:nil];
+        [[NSNotificationCenter defaultCenter]postNotificationName:BRMultiPeerManagerNewPeerCountNofication
+                                                           object:nil
+                                                         userInfo:nil];
         return;
     }
 
@@ -163,7 +174,9 @@ typedef enum : uint16_t {
     [mutableInfoDictionary setObject:[NSDate date] forKey:TIME_ENCOUNTERED_KEY];
     [self.peers addObject:mutableInfoDictionary];
     // Post notification
-    [[NSNotificationCenter defaultCenter]postNotificationName:BRMultiPeerManagerNewPeerCountNofication object:nil userInfo:@{PEER_COUNT_KEY:@(self.peers.count)}];
+    [[NSNotificationCenter defaultCenter]postNotificationName:BRMultiPeerManagerNewPeerCountNofication
+                                                       object:nil
+                                                     userInfo:@{PEER_COUNT_KEY:@(self.peers.count)}];
 }
 
 // A nearby peer has stopped advertising
@@ -177,7 +190,9 @@ typedef enum : uint16_t {
             return NO;
     }];
     [self.peers removeObjectsAtIndexes:a];
-    [[NSNotificationCenter defaultCenter]postNotificationName:BRMultiPeerManagerNewPeerCountNofication object:nil userInfo:@{PEER_COUNT_KEY:@(self.peers.count)}];
+    [[NSNotificationCenter defaultCenter]postNotificationName:BRMultiPeerManagerNewPeerCountNofication
+                                                       object:nil
+                                                     userInfo:@{PEER_COUNT_KEY:@(self.peers.count)}];
 }
 
 // Browsing did not start due to an error
@@ -188,10 +203,29 @@ typedef enum : uint16_t {
 
 #pragma mark - BRMultiPeerManager
 
+NSString* servicesStringForServiceType(BRMultiPeerServiceType type)
+{
+    if (type == BRMultiPeerServiceTypeBitcoinNone)
+        return @"";
+    NSMutableString* s = [NSMutableString string];
+    if (type & BRMultiPeerServiceTypeBitcoinAddressAdvertiser)
+        [s appendFormat:@"addradv,"];
+    if (type & BRMultiPeerServiceTypeBitcoinPaymentProtocol)
+        [s appendFormat:@"paymentprotocol,"];
+    if (type & BRMultiPeerServiceTypeBitcoinNetworkRelay)
+        [s appendFormat:@"relay,"];
+    return [s substringToIndex:s.length - 1];
+}
+
+
 - (void)startAdvertisingWithCompletion:(void (^)(void))completion
 {
     dispatch_async(self.q, ^{
-        [self setServiceAdvertiserAssistant:[[MCAdvertiserAssistant alloc]initWithServiceType:SERVICE_TYPE discoveryInfo:@{SERVICES_KEY:@(self.serviceType).stringValue, ADDRESS_KEY:[[[BRWalletManager sharedInstance] wallet] receiveAddress]} session:self.session]];
+        NSString* recieveAddress = [[[BRWalletManager sharedInstance] wallet] receiveAddress];
+        [self setServiceAdvertiserAssistant:\
+         [[MCAdvertiserAssistant alloc]initWithServiceType:SERVICE_TYPE\
+             discoveryInfo:@{SERVICES_KEY:servicesStringForServiceType(self.serviceType), ADDRESS_KEY:recieveAddress}\
+                                                   session:self.session]];
         [self.serviceAdvertiserAssistant setDelegate:self];
         [self.serviceAdvertiserAssistant start];
         if (completion) dispatch_async(dispatch_get_main_queue(), completion);
@@ -221,7 +255,9 @@ typedef enum : uint16_t {
 - (instancetype)newPeerName
 {
     _peerID = [[MCPeerID alloc]initWithDisplayName:[self newPeerNameString]];
-    [self setSession:[[MCSession alloc]initWithPeer:self.peerID securityIdentity:nil encryptionPreference:MCEncryptionNone]];
+    [self setSession:[[MCSession alloc]initWithPeer:self.peerID
+                                   securityIdentity:nil
+                               encryptionPreference:MCEncryptionNone]];
     return self;
 }
 
@@ -235,11 +271,15 @@ typedef enum : uint16_t {
     if (! (self = [super init])) return nil;
     self.q = dispatch_queue_create("multipeermanager", NULL);
     [self setServiceType:(BRMultiPeerServiceTypeBitcoinAddressAdvertiser)]; // default, for now
-//    [self setServiceType:(BRMultiPeerServiceTypeBitcoinAddressAdvertiser | BRMultiPeerServiceTypeBitcoinNetworkRelay)]; // 00000101  => how one would advertise multiple services
+//    [self setServiceType:(BRMultiPeerServiceTypeBitcoinAddressAdvertiser | BRMultiPeerServiceTypeBitcoinNetworkRelay)];
+//      00000101  => how one would advertise multiple services
     [self setPeers:[NSMutableOrderedSet orderedSetWithCapacity:MAXIMUM_PEERS]];
     [self newPeerName];
     self.seedChangeObserver =
-        [[NSNotificationCenter defaultCenter]addObserverForName:BRWalletManagerSeedChangedNotification object:nil queue:nil usingBlock:^(NSNotification *note) {
+        [[NSNotificationCenter defaultCenter]addObserverForName:BRWalletManagerSeedChangedNotification
+                                                         object:nil
+                                                          queue:nil
+                                                     usingBlock:^(NSNotification *note) {
             [self newPeerName];
         }];
     return self;
